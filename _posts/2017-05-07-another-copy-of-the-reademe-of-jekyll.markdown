@@ -31,7 +31,7 @@ description: pixhawk源码分析—姿态解算!
 主要思想：利用加速度计和磁力计修正陀螺仪的误差  
   
 ![](https://i.imgur.com/LoArXgA.png)  
-<center>解算原理图</center>
+<center>解算原理图</center>  
 
 
 ## 文章参考 ##
