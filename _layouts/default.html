@@ -1,16 +1,14 @@
-{% include header.html %}
-
-<div class="wrap">
-    <div class="container container-left">
-        <div class="row">
-            <div class="col-md-3 hidden-xs">
-                {% include sidebar.html %}
-            </div>
-            <div class="col-md-9">
-                {{ content }}
-            </div>
-        </div>
-    </div>
-
-    {% include footer.html %}
-</div>
+<!DOCTYPE HTML>
+<!--
+Prologue by HTML5 UP
+html5up.net | @ajlkn
+Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+Jekyll integration by Chris Bobbe | chrisbobbe.github.io
+-->
+<html>
+	{%- include head.html -%}
+	<body>
+		{{- content -}}
+		{%- include footer.html -%}
+	</body>
+</html>
