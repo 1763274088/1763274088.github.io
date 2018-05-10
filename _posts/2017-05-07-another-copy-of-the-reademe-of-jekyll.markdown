@@ -15,7 +15,7 @@ description: pixhawk源码分析—姿态解算!
 
 
 
-    `
+    ```c++
 	/****************************************************************************
 	 *
 	 *   Copyright (c) 2013-2017 PX4 Development Team. All rights reserved.
@@ -526,4 +526,4 @@ description: pixhawk源码分析—姿态解算!
 		exit(1);
 	}
 
-`
+```
