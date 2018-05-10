@@ -8,7 +8,7 @@ description: pixhawk源码分析—姿态解算!
 ---
 # 1 源码结构
 
-![Alt text](D:/000-github_blog/1763274088.github.io/assets/images/Pixhawk姿态解算流程.jpg)
+![Alt text](/D:/000-github_blog/1763274088.github.io/assets/images/to/Pixhawk姿态解算流程.jpg)
 
 ---
 # 2 算法分析
