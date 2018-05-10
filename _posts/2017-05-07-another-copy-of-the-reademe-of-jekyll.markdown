@@ -7,6 +7,9 @@ tags: Pixhawk源码分析
 description: pixhawk源码分析—姿态解算!
 ---
 # 1 源码结构
+
+![Alt text](D:/000-github_blog/1763274088.github.io/assets/images/Pixhawk姿态解算流程.jpg)
+
 ---
 # 2 算法分析
 ---
@@ -15,7 +18,8 @@ description: pixhawk源码分析—姿态解算!
 
 
 
-    ```cpp
+
+    ```
 	/****************************************************************************
 	 *
 	 *   Copyright (c) 2013-2017 PX4 Development Team. All rights reserved.
