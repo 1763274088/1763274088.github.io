@@ -8,10 +8,14 @@ description: pixhawk源码分析—姿态解算!
 ---
 # 1 源码结构
 
-![Alt text](/D:/000-github_blog/1763274088.github.io/assets/images/to/Pixhawk姿态解算流程.jpg)
+![](https://i.imgur.com/z6aeydq.jpg)
 
 ---
 # 2 算法分析
+
+
+
+
 ---
 
 # [3 源码](https://github.com/PX4/Firmware/blob/50bd148f53f1aeca6f1bd4a1caabcc18e4f2888b/src/modules/attitude_estimator_q/attitude_estimator_q_main.cpp)
