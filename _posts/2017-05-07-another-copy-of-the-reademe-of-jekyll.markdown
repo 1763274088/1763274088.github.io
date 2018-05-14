@@ -33,6 +33,269 @@ description: pixhawk源码分析—姿态解算!
 ![](https://i.imgur.com/LoArXgA.png)  
 <center>解算原理图</center>  
 
+##2.3 主要函数分析##
+
+    `
+	bool AttitudeEstimatorQ::init()
+	{
+		// Rotation matrix can be easily constructed from acceleration and mag field vectors
+		// 'k' is Earth Z axis (Down) unit vector in body frame
+		Vector<3> k = -_accel;
+		k.normalize();
+	
+		// 'i' is Earth X axis (North) unit vector in body frame, orthogonal with 'k'
+		Vector<3> i = (_mag - k * (_mag * k));
+		i.normalize();
+	
+		// 'j' is Earth Y axis (East) unit vector in body frame, orthogonal with 'k' and 'i'
+		Vector<3> j = k % i;
+	
+		// Fill rotation matrix
+		Matrix<3, 3> R;
+		R.set_row(0, i);
+		R.set_row(1, j);
+		R.set_row(2, k);
+	
+		// Convert to quaternion
+		_q.from_dcm(R);
+	
+		// Compensate for magnetic declination
+		Quaternion decl_rotation;
+		decl_rotation.from_yaw(_mag_decl);
+		_q = decl_rotation * _q;
+	
+		_q.normalize();
+	
+		if (PX4_ISFINITE(_q(0)) && PX4_ISFINITE(_q(1)) &&
+		    PX4_ISFINITE(_q(2)) && PX4_ISFINITE(_q(3)) &&
+		    _q.length() > 0.95f && _q.length() < 1.05f) {
+			_inited = true;
+	
+		} else {
+			_inited = false;
+		}
+	
+		return _inited;
+	}
+
+    `
+初始化：通过加速度计和磁力计计算初始旋转矩阵  
+   
+       Vector<3> k = -_accel;   
+       k.normalize(); 
+-_accel为从加速度计获取数据，对k归一化，得到加速度的方向向量,为机体坐标系下，地理坐标系的z轴(Down)。由于第一次测量数据时无人机一般为平稳无运动状态，所以直接将测到的加速度视为重力加速度g，把k作为dcm旋转矩阵的第三行。
+   
+       Vector<3> i = (_mag - k * (_mag * k));
+	   i.normalize(); 
+  
+得到与_mag水平相同，与k正交的单位向量i，i为机体坐标下，地理坐标系的x轴(North)，把i作为dcm旋转矩阵的第一行。  
+
+　　　　　　　　　　<img src="https://i.imgur.com/3CnfeYq.png" style="zoom:50%" />  
+   
+       Vector<3> j = k % i;
+  
+通过k与i的叉积得到j，j为机体坐标下，地理坐标系的y轴(East)，把j作为dcm旋转矩阵的第二行。   
+        
+        // Fill rotation matrix  
+		Matrix<3, 3> R;
+		R.set_row(0, i);
+		R.set_row(1, j);
+		R.set_row(2, k);
+  
+将i，j，k填入矩阵，得到旋转矩阵。  
+ 
+		// Convert to quaternion
+		_q.from_dcm(R);  
+将旋转矩阵转成四元数。   
+ 
+ 
+  
+		/**
+			 * set quaternion to rotation by DCM
+			 * Reference: Shoemake, Quaternions, http://www.cs.ucr.edu/~vbz/resources/quatut.pdf
+			 */
+			void from_dcm(const Matrix<3, 3> &dcm)
+			{
+				float tr = dcm.data[0][0] + dcm.data[1][1] + dcm.data[2][2];
+		
+				if (tr > 0.0f) {
+					float s = sqrtf(tr + 1.0f);
+					data[0] = s * 0.5f;
+					s = 0.5f / s;
+					data[1] = (dcm.data[2][1] - dcm.data[1][2]) * s;
+					data[2] = (dcm.data[0][2] - dcm.data[2][0]) * s;
+					data[3] = (dcm.data[1][0] - dcm.data[0][1]) * s;
+		
+				} else {
+					/* Find maximum diagonal element in dcm
+					* store index in dcm_i */
+					int dcm_i = 0;
+		
+					for (int i = 1; i < 3; i++) {
+						if (dcm.data[i][i] > dcm.data[dcm_i][dcm_i]) {
+							dcm_i = i;
+						}
+					}
+		
+					int dcm_j = (dcm_i + 1) % 3;
+					int dcm_k = (dcm_i + 2) % 3;
+					float s = sqrtf((dcm.data[dcm_i][dcm_i] - dcm.data[dcm_j][dcm_j] -
+							 dcm.data[dcm_k][dcm_k]) + 1.0f);
+					data[dcm_i + 1] = s * 0.5f;
+					s = 0.5f / s;
+					data[dcm_j + 1] = (dcm.data[dcm_i][dcm_j] + dcm.data[dcm_j][dcm_i]) * s;
+					data[dcm_k + 1] = (dcm.data[dcm_k][dcm_i] + dcm.data[dcm_i][dcm_k]) * s;
+					data[0] = (dcm.data[dcm_k][dcm_j] - dcm.data[dcm_j][dcm_k]) * s;
+				}
+			}  
+旋转矩阵转四元数函数   
+  
+		// Compensate for magnetic declination
+		Quaternion decl_rotation;
+		decl_rotation.from_yaw(_mag_decl);
+		_q = decl_rotation * _q;　　
+	
+		_q.normalize();   
+补偿磁偏角。根据磁偏角 ＿mag＿decl获得只有航向角变化的四元数decl＿rotation，四元数＿q左乘 decl＿rotation得到磁偏角补偿后的四元数＿q。磁偏角的获取方式？  
+  
+		if (PX4_ISFINITE(_q(0)) && PX4_ISFINITE(_q(1)) &&
+		    PX4_ISFINITE(_q(2)) && PX4_ISFINITE(_q(3)) &&
+		    _q.length() > 0.95f && _q.length() < 1.05f) {
+			_inited = true;
+	
+		} else {
+			_inited = false;
+		}
+	
+		return _inited;  
+根据四元数的长度和各自的数据，判断初始化是否成功。[PX4_ISFINITE()](http://en.cppreference.com/w/cpp/numeric/math/isfinite) 
+
+		bool AttitudeEstimatorQ::update(float dt)
+	    {
+		if (!_inited) {
+	
+			if (!_data_good) {
+				return false;
+			}
+	
+			return init();
+		}
+	    //在程序中return 语句是返回函数的结果值，并终止当前函数
+		//https://baike.baidu.com/item/return/16284?fr=aladdin
+		Quaternion q_last = _q;
+	
+		// Angular rate of correction
+		Vector<3> corr;
+		float spinRate = _gyro.length();
+	    //计算角速率的模长
+	
+	    //根据标志位_ext_hdg_mode，判断使用什么数据进行航向校正
+		if (_ext_hdg_mode > 0 && _ext_hdg_good) {
+			if (_ext_hdg_mode == 1) {
+				//应用视觉对航向角校正
+				//将航向映射到地理坐标系，并提取xy分量
+				// Vision heading correction
+				// Project heading to global frame and extract XY component
+				Vector<3> vision_hdg_earth = _q.conjugate(_vision_hdg);
+				float vision_hdg_err = _wrap_pi(atan2f(vision_hdg_earth(1), vision_hdg_earth(0)));
+				//根据vision_hdg_earth的水平分量得到vision_hdg_err，结果限定到-pi到pi
+				//vision_hdg_err为视觉的航向与当前机体的航向的差值
+				//将差值映射到机体坐标系，并乘以相应的权重
+				// Project correction to body frame
+				corr += _q.conjugate_inversed(Vector<3>(0.0f, 0.0f, -vision_hdg_err)) * _w_ext_hdg;
+			}
+	
+			if (_ext_hdg_mode == 2) {
+				//应用运动捕捉系统对航向角校正，vicon、optitrack等室内定位系统
+				// Mocap heading correction
+				// Project heading to global frame and extract XY component
+				Vector<3> mocap_hdg_earth = _q.conjugate(_mocap_hdg);
+				float mocap_hdg_err = _wrap_pi(atan2f(mocap_hdg_earth(1), mocap_hdg_earth(0)));
+				// Project correction to body frame
+				corr += _q.conjugate_inversed(Vector<3>(0.0f, 0.0f, -mocap_hdg_err)) * _w_ext_hdg;
+			}
+		}
+	
+		if (_ext_hdg_mode == 0 || !_ext_hdg_good) {
+			//磁力计校正
+			// Magnetometer correction
+			// Project mag field vector to global frame and extract XY component
+			Vector<3> mag_earth = _q.conjugate(_mag);
+			//得到地理坐标系下的磁力计向量
+			//与vision和mocap不同的是，磁多了一个磁偏角
+			float mag_err = _wrap_pi(atan2f(mag_earth(1), mag_earth(0)) - _mag_decl);
+			float gainMult = 1.0f;
+			const float fifty_dps = 0.873f;
+	
+			if (spinRate > fifty_dps) {
+				gainMult = math::min(spinRate / fifty_dps, 10.0f);
+			}
+			//当角速率大于0.873时，增大gainMult，最终效果是，增大磁误差的比重，加快校正。
+	
+			// Project magnetometer correction to body frame
+			corr += _q.conjugate_inversed(Vector<3>(0.0f, 0.0f, -mag_err)) * _w_mag * gainMult;
+		}
+	
+		_q.normalize();
+	
+	    //加速度计校正
+	    //得到旋转矩阵的第三列，k，z轴
+		// Accelerometer correction
+		// Project 'k' unit vector of earth frame to body frame
+		// Vector<3> k = _q.conjugate_inversed(Vector<3>(0.0f, 0.0f, 1.0f));
+		// Optimized version with dropped zeros
+		Vector<3> k(
+			2.0f * (_q(1) * _q(3) - _q(0) * _q(2)),
+			2.0f * (_q(2) * _q(3) + _q(0) * _q(1)),
+			(_q(0) * _q(0) - _q(1) * _q(1) - _q(2) * _q(2) + _q(3) * _q(3))
+		);
+	
+		corr += (k % (_accel - _pos_acc).normalized()) * _w_accel;
+	    //_accel - _pos_acc约等于重力加速度，normalized得到重力加速度方向单位向量(机体坐标系下)
+	    //k与单位向量叉乘，得到误差。
+	 
+	    //角速率较小时，采用i(积分)估计陀螺偏差
+		// Gyro bias estimation
+		if (spinRate < 0.175f) {
+			_gyro_bias += corr * (_w_gyro_bias * dt);
+	
+			for (int i = 0; i < 3; i++) {
+				_gyro_bias(i) = math::constrain(_gyro_bias(i), -_bias_max, _bias_max);
+			}
+	
+		}
+	
+		_rates = _gyro + _gyro_bias;//得到经过修正后的角速率
+	
+		// Feed forward gyro
+		corr += _rates;//PI控制器的体现
+		//corr=corr+_rates=corr+_gyro+_gyro_bias
+	
+		// Apply correction to state
+		//更新四元数
+		//这一部分理论基础在《捷联惯性导航技术》中有详细介绍，关于DCM随时间传
+		//递的推导过程、四元数随时间传递的推导以及DCM、欧拉角、四元数之间的相互关系都有详细的介绍。
+		_q += _q.derivative(corr) * dt;
+	
+		// Normalize quaternion
+		_q.normalize();
+	
+		if (!(PX4_ISFINITE(_q(0)) && PX4_ISFINITE(_q(1)) &&
+		      PX4_ISFINITE(_q(2)) && PX4_ISFINITE(_q(3)))) {
+			// Reset quaternion to last good state
+			_q = q_last;
+			_rates.zero();
+			_gyro_bias.zero();
+			return false;
+		}
+	
+		return true;
+	}
+ update函数为该程序中最重要的函数，主要用于对四元数向量_q进行初始化赋值和更新。 
+  
+  
+  
+  
 
 ## 文章参考 ##
 
@@ -41,11 +304,11 @@ description: pixhawk源码分析—姿态解算!
 
 2. [Pixhawk之姿态解算篇（2）_mahony算法分析][Pixhawk之姿态解算篇（2）_mahony算法分析-url]
 
-
+3. [Pixhawk之姿态解算篇（3）_源码姿态解算算法分析][Pixhawk之姿态解算篇（3）_源码姿态解算算法分析-url]
 
 [Pixhawk-姿态解算-互补滤波-url]: https://blog.csdn.net/Gen_Ye/article/details/52522721/
 [Pixhawk之姿态解算篇（2）_mahony算法分析-url]: https://blog.csdn.net/qq_21842557/article/details/50993809
-
+[Pixhawk之姿态解算篇（3）_源码姿态解算算法分析-url]:https://blog.csdn.net/qq_21842557/article/details/51058206
 ---
 
 # [3 源码](https://github.com/PX4/Firmware/blob/50bd148f53f1aeca6f1bd4a1caabcc18e4f2888b/src/modules/attitude_estimator_q/attitude_estimator_q_main.cpp)
