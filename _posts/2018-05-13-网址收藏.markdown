@@ -1,0 +1,33 @@
+---
+layout: post
+title:  "网址收藏!"
+date:   2018-05-10 14:10:51 +0800
+categories: 网址收藏
+tags: 网址收藏
+description: 网址收藏!
+---
+# 1 网址收藏 #
+
+
+
+
+## 文章参考 ##
+
+
+1. [Pixhawk-姿态解算-互补滤波][Pixhawk-姿态解算-互补滤波-url]
+
+2. [Pixhawk之姿态解算篇（2）_mahony算法分析][Pixhawk之姿态解算篇（2）_mahony算法分析-url]
+
+
+
+[Pixhawk-姿态解算-互补滤波-url]: https://blog.csdn.net/Gen_Ye/article/details/52522721/
+[Pixhawk之姿态解算篇（2）_mahony算法分析-url]: https://blog.csdn.net/qq_21842557/article/details/50993809
+
+---
+
+# [3 源码](https://github.com/PX4/Firmware/blob/50bd148f53f1aeca6f1bd4a1caabcc18e4f2888b/src/modules/attitude_estimator_q/attitude_estimator_q_main.cpp)
+
+
+
+
+   
