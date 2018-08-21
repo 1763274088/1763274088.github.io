@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>MathJax example</title>
+  <script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML" async>
+</script>
+  </head>
+<body >
+<h1>PX4代码切换历史版本</h1>
+	<h2>克隆Firmware、新建分支并上传</h2>
+<p>克隆Firmware：</p>
+<p>	mkdir Firmware_all</p>
+<p>cd Firmware_all</p>
+<p>git clone https://github.com/1763274088/Firmware.git</p>
+<p>cd Firmware </p>
+	
+<p>新建Firmware分支：</p>	
+   <p>git checkout v1.6.5     %%处于v1.6.5head的状态，然后新建分支</p>	
+   <p>git checkout -b branch_1.6.5    %%新建分支branch_1.6.5，并切换到该分支：</p>	
+    <p>git push --set-upstream origin branch_1.6.5  %%上传新的分支</p>
+   <p>git submodule update --init --recursive  %%更新子模块</p>
+	
+<p>修改文件测试上传</p>	
+	<p>更改README.md文件</p>	
+	<p>git status</p>	
+	<p>git add README.md</p>	
+	<p>git status</p>	
+	<p>git commit -m "test"</p>	
+	<p>git push</p>	
+	
+<h2>新分支的使用</h2>
+	<p>mkdir Firmware_all</p>	
+	<p>cd Firmware_all</p>	
+	<p>git clone https://github.com/1763274088/Firmware.git</p>	
+	<p>cd Firmware</p>	
+	<p>git checkout branch_1.6.5</p>	
+	<p>git submodule update --init --recursive</p>		
+	
+  
+</body>
+</html>
